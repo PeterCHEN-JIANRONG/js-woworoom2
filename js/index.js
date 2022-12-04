@@ -1,3 +1,5 @@
+import { toThousand } from "./utils/toThousand.js";
+
 const apiPath = "peter104js2022";
 const apiBaseUrl = `https://livejs-api.hexschool.io/api/livejs/v1/customer/${apiPath}`;
 let products = [];
@@ -6,6 +8,7 @@ let cartsData = {};
 // DOM
 const productListDom = document.querySelector(".productWrap");
 const cartsTableDom = document.querySelector(".shoppingCart-table");
+const productSelect = document.querySelector(".productSelect");
 const customerName = document.querySelector("#customerName");
 const customerPhone = document.querySelector("#customerPhone");
 const customerEmail = document.querySelector("#customerEmail");
@@ -68,6 +71,7 @@ function getProducts() {
       products = res.data.products;
       // console.log(products);
       renderProducts(products);
+      renderSelectOption(products);
     })
     .catch((err) => {
       console.log(err);
@@ -87,12 +91,26 @@ function renderProducts(data) {
     />
     <a href="#" class="addCardBtn" data-id="${item.id}">加入購物車</a>
     <h3>${item.title}</h3>
-    <del class="originPrice">NT$${item.origin_price}</del>
-    <p class="nowPrice">NT$${item.price}</p>
+    <del class="originPrice">NT$${toThousand(item.origin_price)}</del>
+    <p class="nowPrice">NT$${toThousand(item.price)}</p>
   </li>`;
     productListDom.innerHTML = str;
   });
 }
+
+// 渲染產品類別選單
+function renderSelectOption(data) {
+  let str = `<option value="全部" selected>全部</option>`;
+
+  // 取得產品類別(不重複)
+  const options = [...new Set(data.map(item=>item.category))];
+
+  options.forEach(item=>{
+    str+=`<option value="${item}">${item}</option>`
+  });
+  productSelect.innerHTML = str;
+}
+
 
 // 取得購物車
 function getCarts(){
@@ -179,9 +197,9 @@ function renderCarts(data) {
           <p>${item.product.title}</p>
         </div>
       </td>
-      <td>NT$${item.product.price}</td>
+      <td>NT$${toThousand(item.product.price)}</td>
       <td>${item.quantity}</td>
-      <td>NT$${item.product.price*item.quantity}</td>
+      <td>NT$${toThousand(item.product.price*item.quantity)}</td>
       <td class="discardBtn" data-id="${item.id}">
         <a href="#" class="discardBtn material-icons" data-id="${item.id}"> clear </a>
       </td>
@@ -197,7 +215,7 @@ function renderCarts(data) {
       <td>
         <p>總金額</p>
       </td>
-      <td>NT$${data.finalTotal}</td>
+      <td>NT$${toThousand(data.finalTotal)}</td>
     </tr>`
   } else {
     str+= `<tr>
@@ -305,6 +323,17 @@ orderSubmitBtn.addEventListener("click", function(e){
   e.preventDefault();
   postOrder();
 })
+
+// 產品篩選
+productSelect.addEventListener("change", function(e){
+  if(e.target.value === '全部') {
+    renderProducts(products);
+    return
+  } 
+  
+  const filterProducts = products.filter(item=>item.category === e.target.value);
+  renderProducts(filterProducts);
+});
 
 
 // 檢查訂單資料
