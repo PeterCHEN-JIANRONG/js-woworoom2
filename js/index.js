@@ -6,6 +6,56 @@ let cartsData = {};
 // DOM
 const productListDom = document.querySelector(".productWrap");
 const cartsTableDom = document.querySelector(".shoppingCart-table");
+const customerName = document.querySelector("#customerName");
+const customerPhone = document.querySelector("#customerPhone");
+const customerEmail = document.querySelector("#customerEmail");
+const customerAddress = document.querySelector("#customerAddress");
+const tradeWay = document.querySelector("#tradeWay");
+const orderForm = document.querySelector(".orderInfo-form");
+const orderSubmitBtn = document.querySelector(".orderInfo-btn");
+
+// validate - constraints 約束條件
+const constraints = {
+  "姓名": {
+    presence:{
+      allowEmpty:false,
+      message:"必填"
+    }
+  },
+  "電話": {
+    presence:{
+      allowEmpty:false,
+      message:"必填"
+    },
+    length:{
+      minimum:8,
+      maximum:12,
+      tooShort:"最少%{count}碼",
+      tooLong:"最多%{count}碼",
+    }
+  },
+  "Email": {
+    presence:{
+      allowEmpty:false,
+      message:"必填"
+    },
+    email: {
+      message:"必須是正確的格式(例:apple@gmail.com)"
+    }
+  },
+  "寄送地址": {
+    presence:{
+      allowEmpty:false,
+      message:"必填"
+    }
+  },
+  "交易方式": {
+    presence: {
+        allowEmpty: false,
+        message: "是必填欄位"
+    }
+  }
+}
 
 // function
 
@@ -157,6 +207,57 @@ function renderCarts(data) {
 cartsTableDom.innerHTML = str;
 }
 
+// 建立訂單
+function postOrder(){
+
+  // 表單驗證
+  if(!checkFormIsSuccess()){
+    return
+  }
+
+  const url = `${apiBaseUrl}/orders`;
+  const data = {
+    "user": {
+      "name": customerName.value,
+      "tel": customerPhone.value,
+      "email": customerEmail.value,
+      "address": customerAddress.value,
+      "payment": tradeWay.value
+    }
+  }
+
+  axios.post(url, {data}).then(res=>{
+    // console.log(res.data);
+    getCarts();
+    successAlertMsg("建立訂單成功");
+    orderForm.reset();
+  }).catch(err=>{
+    errorAlertMsg(err.response.data.message);
+  });
+}
+
+// 成功訊息
+function successAlertMsg(message){
+  Swal.fire({
+    position: 'center',
+    icon: 'success',
+    title: message,
+    showConfirmButton: false,
+    timer: 1500
+  });
+}
+
+// 失敗訊息
+function errorAlertMsg(message){
+  Swal.fire({
+    position: 'center',
+    icon: 'error',
+    title: message,
+    showConfirmButton: false,
+    timer: 1500
+  });
+}
+
 // addEventListener 綁監聽事件
 
 // 產品列表: 加入購物車
@@ -198,6 +299,35 @@ cartsTableDom.addEventListener("click",function(e){
 
   console.log('沒有點到刪除按鈕');
 })
+
+// 送出訂單
+orderSubmitBtn.addEventListener("click", function(e){
+  e.preventDefault();
+  postOrder();
+})
+
+
+// 檢查訂單資料
+function checkFormIsSuccess(){
+  const errors = validate(orderForm, constraints);
+
+  customerName.nextElementSibling.textContent = '';
+  customerPhone.nextElementSibling.textContent = '';
+  customerEmail.nextElementSibling.textContent = '';
+  customerAddress.nextElementSibling.textContent = '';
+  tradeWay.nextElementSibling.textContent = '';
+  
+  if(!errors){
+    return true; // 驗證成功
+  } else {
+    customerName.nextElementSibling.textContent = errors["姓名"]?errors["姓名"][0]:'';
+    customerPhone.nextElementSibling.textContent = errors["電話"]?errors["電話"][0]:'';
+    customerEmail.nextElementSibling.textContent = errors["Email"]?errors["Email"][0]:'';
+    customerAddress.nextElementSibling.textContent = errors["寄送地址"]?errors["寄送地址"][0]:'';
+    tradeWay.nextElementSibling.textContent = errors["交易方式"]?errors["交易方式"][0]:'';
+    return false; // 驗證失敗
+  }
+}
 
 function init() {
   getProducts();
