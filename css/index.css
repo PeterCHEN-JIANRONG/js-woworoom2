@@ -834,3 +834,9 @@ body {
   display: none;
 }
 /*# sourceMappingURL=all.css.map */
+
+.productCountSelect {
+  font-size: 24px;
+  font-weight: 700;
+  padding: 4px 8px;
+}

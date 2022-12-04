@@ -151,6 +151,20 @@ function addCart(productId){
 }
 
 // 修改單筆購物車數量
+function updateCart(carts){
+  const url = `${apiBaseUrl}/carts`;
+  const {id, quantity} = carts;
+  const data = {
+    id,
+    quantity
+  }
+
+  axios.patch(url,{data}).then(res=>{
+    getCarts();
+  }).catch(err=>{
+    console.log(err);
+  })
+}
 
 // 刪除單筆購物車
 function deleteCarts(cartsId){
@@ -190,6 +204,19 @@ function renderCarts(data) {
     </tr>`;
 
     data.carts.forEach(item=>{
+      // selectCount 結構
+      const selectCount = (Math.floor(item.quantity / 10)+1) * 10; // 每10個一個單位
+      let optionsStr = '';
+
+      for (let i = 1; i <= selectCount; i++) {
+        optionsStr+= (i===item.quantity)?`<option value="${i}" selected>${i}</option>`:`<option value="${i}">${i}</option>`;
+      }
+
+      const SelectCountStr = `<select class="productCountSelect" data-id="${item.id}">
+        ${optionsStr}
+      </select>`;
+
+      // 每筆購物車資料
       str+=`<tr>
       <td>
         <div class="cardItem-title">
@@ -198,7 +225,7 @@ function renderCarts(data) {
         </div>
       </td>
       <td>NT$${toThousand(item.product.price)}</td>
-      <td>${item.quantity}</td>
+      <td>${SelectCountStr}</td>
       <td>NT$${toThousand(item.product.price*item.quantity)}</td>
       <td class="discardBtn" data-id="${item.id}">
         <a href="#" class="discardBtn material-icons" data-id="${item.id}"> clear </a>
@@ -206,6 +233,7 @@ function renderCarts(data) {
     </tr>`;
     })
   
+    // 刪除所有 & 總金額
     str+=`<tr>
       <td>
         <a href="#" class="discardAllBtn">刪除所有品項</a>
@@ -285,7 +313,7 @@ productListDom.addEventListener("click", function(e){
 
   // 判斷是否點到[加入購物車]按鈕
   if(!e.target.getAttribute("class")?.includes("addCardBtn")){
-    console.log("沒有點到加入購物車");
+    // console.log("沒有點到加入購物車");
     return 
   }
   
@@ -315,7 +343,24 @@ cartsTableDom.addEventListener("click",function(e){
     return
   }
 
-  console.log('沒有點到刪除按鈕');
+  // console.log('沒有點到刪除按鈕');
+})
+
+// 更新購物車商品數量
+cartsTableDom.addEventListener("change", function(e){
+
+  // 更新購物車商品數量
+  if(e.target.getAttribute("class")?.includes("productCountSelect")){
+
+    let carts = {
+      id: e.target.dataset.id,
+      quantity: parseInt(e.target.value)
+    }
+
+    updateCart(carts);
+    return;
+  }
+  
 })
 
 // 送出訂單
