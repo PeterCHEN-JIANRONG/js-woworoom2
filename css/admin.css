@@ -224,7 +224,7 @@ body {
 .section-title {
   text-align: center;
   font-size: 1.75rem;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
 }
 
 .bedAdvantage {
@@ -808,3 +808,7 @@ body {
   display: none;
 }
 /*# sourceMappingURL=all.css.map */
+
+.chart-wrap {
+  margin-bottom: 30px;
+}

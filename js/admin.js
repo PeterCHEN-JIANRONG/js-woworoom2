@@ -1,22 +1,22 @@
 // C3.js
-let chart = c3.generate({
-  bindto: "#chart", // HTML 元素綁定
-  data: {
-    type: "pie",
-    columns: [
-      ["Louvre 雙人床架", 1],
-      ["Antony 雙人床架", 2],
-      ["Anty 雙人床架", 3],
-      ["其他", 4],
-    ],
-    colors: {
-      "Louvre 雙人床架": "#DACBFF",
-      "Antony 雙人床架": "#9D7FEA",
-      "Anty 雙人床架": "#5434A7",
-      其他: "#301E5F",
-    },
-  },
-});
+// let chart = c3.generate({
+//   bindto: "#chart", // HTML 元素綁定
+//   data: {
+//     type: "pie",
+//     columns: [
+//       ["Louvre 雙人床架", 1],
+//       ["Antony 雙人床架", 2],
+//       ["Anty 雙人床架", 3],
+//       ["其他", 4],
+//     ],
+//     colors: {
+//       "Louvre 雙人床架": "#DACBFF",
+//       "Antony 雙人床架": "#9D7FEA",
+//       "Anty 雙人床架": "#5434A7",
+//       其他: "#301E5F",
+//     },
+//   },
+// });
 
 import { successAlertMsg, errorAlertMsg } from "./utils/alertMessage.js";
 
@@ -32,7 +32,6 @@ const orderTable = document.querySelector(".orderPage-table");
 const discardAllBtn = document.querySelector(".discardAllBtn");
 
 // function
-
 // 取得訂單列表
 function getOrders() {
   const url = `${apiBaseUrl}/orders`;
@@ -42,6 +41,8 @@ function getOrders() {
       // console.log(res.data);
       const { orders } = res.data;
       renderOrders(orders);
+      renderCategoryChart(orders);
+      renderProductChart(orders);
     })
     .catch((err) => {
       console.log(err);
@@ -158,6 +159,93 @@ function renderOrders(orders) {
   });
 
   orderTable.innerHTML = str;
+}
+
+// 渲染圖表: 計算全產品類別營收
+function renderCategoryChart(orders) {
+  // 計算全產品類別營收
+  const categoryRevenue = {
+    床架: 0,
+    收納: 0,
+    窗簾: 0,
+  };
+
+  // 各類別金額加總
+  orders.forEach((order) => {
+    order.products.forEach((product) => {
+      categoryRevenue[product.category] += product.price * product.quantity;
+    });
+  });
+
+  const categoryRevenueC3 = [];
+  Object.keys(categoryRevenue).forEach((key) => {
+    categoryRevenueC3.push([key, categoryRevenue[key]]);
+  });
+
+  // *C3會自己排序，不用額外做排序
+  // categoryRevenueC3.sort((a,b)=> b[1] - a[1] ); // 類別營收排序(高->低)
+
+  // C3.js
+  let chart = c3.generate({
+    bindto: "#chart", // HTML 元素綁定
+    data: {
+      type: "pie",
+      columns: categoryRevenueC3,
+      colors: {
+        床架: "#DACBFF",
+        收納: "#9D7FEA",
+        窗簾: "#301E5F",
+      },
+    },
+  });
+}
+
+// 渲染圖表: 全品項營收比重
+function renderProductChart(orders) {
+  const productRevenue = {};
+
+  // 各品項金額加總
+  orders.forEach((order) => {
+    order.products.forEach((product) => {
+      if (productRevenue[product.title] == undefined) {
+        productRevenue[product.title] = product.price * product.quantity;
+      } else {
+        productRevenue[product.title] += product.price * product.quantity;
+      }
+    });
+  });
+
+  const productRevenuePrice = [];
+  Object.keys(productRevenue).forEach((key) => {
+    productRevenuePrice.push([key, productRevenue[key]]);
+  });
+
+  productRevenuePrice.sort((a, b) => b[1] - a[1]); // 各品項銷售金額排序(高>低)
+
+  // 銷售前3名產品, 剩餘歸類其他
+  const dataC3 = [];
+  let otherTotalPrice = 0;
+  productRevenuePrice.forEach((item, index) => {
+    if (index < 3) {
+      dataC3.push(item);
+    } else {
+      otherTotalPrice += item[1]; // 剩餘產品金額加總
+    }
+  });
+
+  dataC3.push(["其他", otherTotalPrice]);
+
+  // C3.js
+  let chart = c3.generate({
+    bindto: "#chart2", // HTML 元素綁定
+    data: {
+      type: "pie",
+      columns: dataC3,
+    },
+    color: {
+      pattern: ["#DACBFF", "#9D7FEA", "#5434A7", "#301E5F"],
+    },
+  });
 }
 
 // addEventListener 綁監聽事件
